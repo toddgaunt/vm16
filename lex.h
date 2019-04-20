@@ -7,6 +7,7 @@ typedef enum {
 	TOK_ERROR = -1,
 	TOK_EOF = 0,
 	TOK_COMMA,
+	TOK_DASH,
 
 	/* Instructions */
 	TOK_LUI,
@@ -44,6 +45,8 @@ typedef enum {
 	TOK_HALT,
 	TOK_LA,
 	TOK_LI,
+	TOK_LOAD,
+	TOK_STORE,
 	TOK_WORD,
 } token_k;
 

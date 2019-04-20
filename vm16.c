@@ -15,6 +15,12 @@ vm16_dump(FILE *out, struct vm16 const *v)
 	fprintf(out, "r:  [0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x]\n",
 			v->r[0], v->r[1], v->r[2], v->r[3],
 			v->r[4], v->r[5], v->r[6], v->r[7]);
+	fprintf(out, "mm[pc-2]: 0x%x\n", v->mm[v->pc-2]);
+	fprintf(out, "mm[pc-1]: 0x%x\n", v->mm[v->pc-1]);
+	fprintf(out, "mm[pc]:   0x%x\n", v->mm[v->pc]);
+	fprintf(out, "mm[pc+1]: 0x%x\n", v->mm[v->pc+1]);
+	fprintf(out, "mm[pc+2]: 0x%x\n", v->mm[v->pc+2]);
+	fprintf(out, "\n");
 }
 
 void
@@ -32,35 +38,12 @@ vm16_init(struct vm16 *v)
 }
 
 bool
-vm16_loadf(struct vm16 *vm, FILE *in)
-{
-	int ch;
-	size_t i;
-	uint16_t instr;
-
-	for (i = 0; i < VM16_MM_SIZE; ++i) {
-		ch = getc(in);
-		if (ch == EOF)
-			break;
-		instr = ch << 8;
-		ch = getc(in);
-		if (ch == EOF) {
-			printf("UNEXPECTED EOF\n");
-			exit(-1);
-		}
-		instr |= ch;
-		vm->mm[0x10 + i] = instr;
-	}
-	return true;
-}
-
-bool
 vm16_load(struct vm16 *vm, uint16_t *words, uint16_t nwords)
 {
 	/* Don't load the words if they can't fit in main memory */
 	if (0x10 + nwords >= VM16_MM_SIZE)
 		return false;
-	memcpy(&vm->mm[0x10], words, nwords);
+	memcpy(&vm->mm[VM16_ADDR_START], words, sizeof (*words) * nwords);
 	return true;
 }
 

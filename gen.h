@@ -4,7 +4,7 @@
 #include "txt.h"
 #include "vm16.h"
 
-void
+size_t
 assemble(struct txt *in, uint16_t out[VM16_MM_SIZE]);
 
 #endif

@@ -12,7 +12,8 @@
 #include "vm16.h"
 
 int pass = 0;
-uint16_t pc = 0;
+uint16_t pc = VM16_ADDR_START;
+size_t idx = 0;
 struct symtab *symtab;
 struct token next;
 
@@ -41,10 +42,8 @@ static void
 gen(uint16_t *out, uint16_t instr)
 {
 	if (pass == 1) {
-		//putc((instr & 0xFF00) >> 8, out);
-		//putc(instr & 0x00FF, out);
-		printf("%d", (instr & 0xFF00) >> 8);
-		printf("%d\n", instr & 0x00FF);
+		printf("0x%x\n", instr);
+		out[idx++] = instr;
 	}
 	pc += 1;
 }
@@ -82,16 +81,27 @@ parse_reg(struct txt *in, uint16_t *r)
 
 /* Parse a octal/decimal/hexadecimal number and write it to `n` else error */
 static bool
-parse_num(struct txt *in, int maxbit, uint16_t *n)
+parse_number(struct txt *in, int maxbit, uint16_t *n)
 {
 	uint16_t tmp;
 	size_t max;
+	bool negate = false;
 
+top:
 	get(in);
 	switch (next.kind) {
-	case TOK_OCT: max = 4; break;
-	case TOK_DEC: max = 4; break;
-	case TOK_HEX: max = 3; break;
+	case TOK_OCT:
+		max = 4;
+		break;
+	case TOK_DEC:
+		max = 4;
+		break;
+	case TOK_HEX:
+		max = 3;
+		break;
+	case TOK_DASH:
+		negate = !negate;
+		goto top;
 	default:
 		err(in, &next, "expected number literal");
 		exit(-1);
@@ -101,6 +111,8 @@ parse_num(struct txt *in, int maxbit, uint16_t *n)
 		err(in, &next, "decimal number exceeds 10 bit max");
 		exit(-1);
 	}
+	if (negate)
+		tmp = -tmp;
 	*n = tmp;
 	return true;
 }
@@ -131,45 +143,18 @@ parse_label(struct txt *in, uint16_t *addr)
 }
 
 static void
-asm_lui(struct txt *in, uint16_t  *out)
+asm_ori(struct txt *in, uint16_t  *out, uint16_t opcode)
 {
 	uint16_t rd = 0, im10 = 0;
 
         parse_reg(in, &rd);
         parse_comma(in);
-        parse_num(in, 10, &im10);
-
-	gen(out, vm16_ori(VM16_LUI, rd, im10));
+        parse_number(in, 10, &im10);
+	gen(out, vm16_ori(opcode, rd, im10));
 }
 
 static void
-asm_auipc(struct txt *in, uint16_t  *out)
-{
-	uint16_t rd = 0, im10 = 0;
-
-        parse_reg(in, &rd);
-        parse_comma(in);
-        parse_num(in, 10, &im10);
-	gen(out, vm16_ori(VM16_AUIPC, rd, im10));
-}
-
-static void
-asm_jalr(struct txt *in, uint16_t  *out)
-{
-	uint16_t rd = 0, addr = 0;
-	uint16_t raddr; /* Relative address */
-
-        parse_reg(in, &rd);
-        parse_comma(in);
-	parse_label(in, &addr);
-
-	raddr = addr - pc - 3;
-	gen(out, vm16_ori(VM16_AUIPC, rd, (addr & 0xFF80) >> 6));
-	gen(out, vm16_orri(VM16_JALR, rd, rd, raddr & 0x007F));
-}
-
-static void
-asm_beq(struct txt *in, uint16_t  *out)
+asm_orri(struct txt *in, uint16_t *out, uint16_t opcode)
 {
 	uint16_t rd = 0, r1 = 0, im7 = 0;
 
@@ -177,53 +162,8 @@ asm_beq(struct txt *in, uint16_t  *out)
         parse_comma(in);
         parse_reg(in, &r1);
         parse_comma(in);
-        parse_num(in, 10, &im7);
-	gen(out, vm16_orri(VM16_BEQ, rd, r1, im7));
-}
-
-static void
-asm_lw(struct txt *in, uint16_t  *out)
-{
-	uint16_t rd = 0, r1 = 0, addr = 0;
-	uint16_t raddr; /* Relative address */
-
-        parse_reg(in, &rd);
-        parse_comma(in);
-        parse_reg(in, &r1);
-        parse_comma(in);
-	parse_label(in, &addr);
-
-	raddr = addr - pc;
-	gen(out, vm16_ori(VM16_AUIPC, r1, raddr & 0xFFC0));
-	gen(out, vm16_orri(VM16_LW, rd, r1, raddr & 0x003F));
-}
-
-static void
-asm_sw(struct txt *in, uint16_t  *out)
-{
-	uint16_t rd = 0, addr = 0;
-	uint16_t raddr; /* Relative address */
-
-        parse_reg(in, &rd);
-        parse_comma(in);
-	parse_label(in, &addr);
-
-	raddr = addr - pc;
-	gen(out, vm16_ori(VM16_AUIPC, rd, raddr & 0xFFC0));
-	gen(out, vm16_orri(VM16_LW, rd, rd, raddr & 0x003F));
-}
-
-static void
-asm_addi(struct txt *in, uint16_t  *out)
-{
-	uint16_t rd = 0, r1 = 0, im7 = 0;
-
-        parse_reg(in, &rd);
-        parse_comma(in);
-        parse_reg(in, &r1);
-        parse_comma(in);
-        parse_num(in, 10, &im7);
-	gen(out, vm16_orri(VM16_ADDI, rd, r1, im7));
+        parse_number(in, 10, &im7);
+	gen(out, vm16_orri(opcode, rd, r1, im7));
 }
 
 static void
@@ -239,7 +179,7 @@ asm_math(struct txt *in, uint16_t  *out, int alt)
 	gen(out, vm16_orrar(VM16_MATH, rd, r1, alt, r2));
 }
 
-void
+size_t
 assemble(struct txt *in, uint16_t out[VM16_MM_SIZE])
 {
 	symtab = symtab_create(1024);
@@ -263,25 +203,63 @@ assemble(struct txt *in, uint16_t out[VM16_MM_SIZE])
 			}
 
 			switch (next.kind) {
-			case TOK_LUI:   asm_lui(in, out);             break;
-			case TOK_AUIPC: asm_auipc(in, out);           break;
-			case TOK_JALR:  asm_jalr(in, out);            break;
-			case TOK_BEQ:   asm_beq(in, out);             break;
-			case TOK_LW:    asm_lw(in, out);              break;
-			case TOK_SW:    asm_sw(in, out);              break;
-			case TOK_ADDI:  asm_addi(in, out); break;
-			case TOK_ADD:   asm_math(in, out, VM16_ADD);  break;
-			case TOK_SUB:   asm_math(in, out, VM16_SUB);  break;
-			case TOK_SLL:   asm_math(in, out, VM16_SLL);  break;
-			case TOK_SRL:   asm_math(in, out, VM16_SRL);  break;
-			case TOK_NAND:  asm_math(in, out, VM16_NAND); break;
-			case TOK_AND:   asm_math(in, out, VM16_AND);  break;
-			case TOK_OR:    asm_math(in, out, VM16_OR);   break;
-			case TOK_LT:    asm_math(in, out, VM16_LT);   break;
+			case TOK_LUI:
+				asm_ori(in, out, VM16_LUI);
+				break;
+			case TOK_AUIPC:
+				asm_ori(in, out, VM16_AUIPC);
+				break;
+			case TOK_JALR:
+				asm_orri(in, out, VM16_JALR);
+				break;
+			case TOK_BEQ:
+				asm_orri(in, out, VM16_BEQ);
+				break;
+			case TOK_LW:
+				asm_orri(in, out, VM16_LW);
+				break;
+			case TOK_SW:
+				asm_orri(in, out, VM16_SW);
+				break;
+			case TOK_ADDI:
+				asm_orri(in, out, VM16_ADDI);
+				break;
+			case TOK_ADD:
+				asm_math(in, out, VM16_ADD);
+				break;
+			case TOK_SUB:
+				asm_math(in, out, VM16_SUB);
+				break;
+			case TOK_SLL:
+				asm_math(in, out, VM16_SLL);
+				break;
+			case TOK_SRL:
+				asm_math(in, out, VM16_SRL);
+				break;
+			case TOK_NAND:
+				asm_math(in, out, VM16_NAND);
+				break;
+			case TOK_AND:
+				asm_math(in, out, VM16_AND);
+				break;
+			case TOK_OR:
+				asm_math(in, out, VM16_OR);
+				break;
+			case TOK_LT:
+				asm_math(in, out, VM16_LT);
+				break;
+			/* Directives */
+			case TOK_NOP:
+				gen(out, vm16_orri(VM16_ADDI, 0, 0, 0));
+				break;
+			case TOK_HALT:
+				gen(out, vm16_orri(VM16_JALR, 0, 0, 0));
+				break;
 			default:        err(in, &next, "expected instruction");
 			}
 			get(in);
 		}
 		txt_reset(in);
 	}
+	return idx;
 }

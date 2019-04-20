@@ -55,8 +55,8 @@ main(int argc, char **argv)
 	argv0 = argv[0];
 	argv += 1;
 
-	printf("%x\n", vm16_orri(VM16_JALR, 0, 4, 0x3f));
-	printf("%x\n", vm16_orrar(VM16_MATH, 4, 5, VM16_SLL, 6));
+	//printf("%x\n", vm16_orri(VM16_JALR, 0, 4, 0x3f));
+	//printf("%x\n", vm16_orrar(VM16_MATH, 4, 5, VM16_SLL, 6));
 
 	ARG_BEGIN(argv) {
 	case 'h':
@@ -92,6 +92,7 @@ main(int argc, char **argv)
 		struct txt in;
 		uint16_t out[VM16_MM_SIZE];
 		struct vm16 *v = malloc(sizeof(*v));
+		size_t nwords;
 
 		fp = fopen(inpath, "ro");
 		if (!fp)
@@ -100,14 +101,18 @@ main(int argc, char **argv)
 		txt_init(&in, inpath, strff(fp));
 		fclose(fp);
 
-		assemble(&in, out);
+		nwords = assemble(&in, out);
 
 		vm16_init(v);
-		vm16_load(v, out, VM16_MM_SIZE);
+		vm16_load(v, out, nwords);
+		for (int i = 0; i < 32; ++i) {
+			printf("%d\n", out[i]);
+		}
 		if (dump) {
 			while (v->pc != VM16_ADDR_HALT) {
 				vm16_dump(stdout, v);
 				vm16_step(v);
+				sleep(1);
 			}
 		} else {
 			vm16_exec(v);

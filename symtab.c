@@ -62,6 +62,12 @@ symtab_create(size_t size)
 	return st;
 }
 
+void
+symtab_destroy(struct symtab *s)
+{
+	zone_popz(s->z);
+}
+
 struct token const *
 symtab_getk(struct symtab const *st, struct token const *k)
 {

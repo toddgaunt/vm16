@@ -22,6 +22,7 @@ struct {char const *str; token_k kind;} kw[] = {
 	{"t0", TOK_T0},     {"t1", TOK_T1}, {"t2", TOK_T2}, {"t3", TOK_T3},
 	/* Directives */
 	{"nop", TOK_NOP}, {"halt", TOK_HALT}, {"la", TOK_LA}, {"li", TOK_LI},
+	{"ll", TOK_LOAD}, {"sl", TOK_STORE},
 	{".word", TOK_WORD}, 
 };
 
@@ -101,10 +102,21 @@ lex(struct txt *in)
 	rv.str = txt_at(in);
 	ch = txt_get(in);
 	switch (ch) {
-	case '\0': rv.kind = TOK_EOF;                                    break;
-	case ',':  rv.kind = TOK_COMMA;                                  break;
-	case '`':  rv.kind = lex_raw_string(in);                         break;
-	case '0':  rv.kind = lex_nondecimal(in);                         break;
+	case '\0':
+		rv.kind = TOK_EOF;
+		break;
+	case ',':
+		rv.kind = TOK_COMMA;
+		break;
+	case '-':
+		rv.kind = TOK_DASH;
+		break;
+	case '`':
+		rv.kind = lex_raw_string(in);
+		break;
+	case '0':
+		rv.kind = lex_nondecimal(in);
+		break;
 	case '1':
 	case '2':
 	case '3':
@@ -113,7 +125,9 @@ lex(struct txt *in)
 	case '6':
 	case '7':
 	case '8':
-	case '9': rv.kind = lex_decimal(in);                             break;
+	case '9':
+		rv.kind = lex_decimal(in);
+		break;
 	default:
 		while (!isdelim(txt_at(in)[0]) && isalnum(txt_at(in)[0]))
 			txt_get(in);
