@@ -81,34 +81,29 @@ parse_reg(struct txt *in, uint16_t *r)
 
 /* Parse a octal/decimal/hexadecimal number and write it to `n` else error */
 static bool
-parse_number(struct txt *in, int maxbit, uint16_t *n)
+parse_number(struct txt *in, uint8_t maxbit, uint16_t *n)
 {
-	uint16_t tmp;
-	size_t max;
+	uint64_t tmp;
 	bool negate = false;
 
 top:
 	get(in);
 	switch (next.kind) {
 	case TOK_OCT:
-		max = 4;
-		break;
 	case TOK_DEC:
-		max = 4;
-		break;
 	case TOK_HEX:
-		max = 3;
 		break;
 	case TOK_DASH:
 		negate = !negate;
 		goto top;
 	default:
-		err(in, &next, "expected number literal");
+		err(in, &next, "expected integer literal");
 		exit(-1);
 	}
+
 	tmp = strtol(next.str, NULL, 0);
-	if (next.len > max || tmp > (1 << maxbit) - 1) {
-		err(in, &next, "decimal number exceeds 10 bit max");
+	if (tmp > (uint64_t)(1 << maxbit) - 1) {
+		err(in, &next, "integer literal too large");
 		exit(-1);
 	}
 	if (negate)
@@ -162,7 +157,7 @@ asm_orri(struct txt *in, uint16_t *out, uint16_t opcode)
         parse_comma(in);
         parse_reg(in, &r1);
         parse_comma(in);
-        parse_number(in, 10, &im7);
+        parse_number(in, 7, &im7);
 	gen(out, vm16_orri(opcode, rd, r1, im7));
 }
 
@@ -177,6 +172,14 @@ asm_math(struct txt *in, uint16_t  *out, int alt)
         parse_comma(in);
         parse_reg(in, &r2);
 	gen(out, vm16_orrar(VM16_MATH, rd, r1, alt, r2));
+}
+
+static void
+asm_word(struct txt *in, uint16_t *out)
+{
+	uint16_t word;
+	parse_number(in, 16, &word);
+	gen(out, word);
 }
 
 size_t
@@ -255,7 +258,12 @@ assemble(struct txt *in, uint16_t out[VM16_MM_SIZE])
 			case TOK_HALT:
 				gen(out, vm16_orri(VM16_JALR, 0, 0, 0));
 				break;
-			default:        err(in, &next, "expected instruction");
+			case TOK_WORD:
+				asm_word(in, out);
+				break;
+			default:
+				err(in, &next, "expected instruction");
+				break;
 			}
 			get(in);
 		}
