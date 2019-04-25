@@ -31,10 +31,10 @@ find_index(struct symtab const *st, struct token const *k)
 	size_t i;
 	size_t begin;
 	
-	begin = hash(k->str, k->len) % st->size;
+	begin = hash(k->bytes, k->len) % st->size;
 	i = begin;
 	while (st->k[i]) {
-		if (st->k[i]->len == k->len && !memcmp(st->k[i]->str, k->str, k->len))
+		if (st->k[i]->len == k->len && !memcmp(st->k[i]->bytes, k->bytes, k->len))
 			break;
 		i = (i + 1) % st->size;
 		if (begin == i)

@@ -10,7 +10,7 @@
 #include "lex.h"
 
 /* Keywords defined by this lexer */
-struct {char const *str; token_k kind;} kw[] = {
+struct {char const *bytes; token_k kind;} kw[] = {
 	/* Instructions */
 	{"lui", TOK_LUI},   {"auipc", TOK_AUIPC}, {"jalr", TOK_JALR},
 	{"beq", TOK_BEQ},   {"lw", TOK_LW},       {"sw", TOK_SW},
@@ -22,7 +22,7 @@ struct {char const *str; token_k kind;} kw[] = {
 	{"t0", TOK_T0},     {"t1", TOK_T1}, {"t2", TOK_T2}, {"t3", TOK_T3},
 	/* Directives */
 	{"nop", TOK_NOP}, {"halt", TOK_HALT}, {"la", TOK_LA}, {"li", TOK_LI},
-	{"ll", TOK_LOAD}, {"sl", TOK_STORE},
+	{"load", TOK_LOAD}, {"store", TOK_STORE}, {"jmp", TOK_JMP},
 	{".word", TOK_WORD}, 
 };
 
@@ -99,7 +99,7 @@ lex(struct txt *in)
 	strip_whitespace_and_comments(in);
 	rv.row = in->row;
 	rv.col = in->col;
-	rv.str = txt_at(in);
+	rv.bytes = txt_at(in);
 	ch = txt_get(in);
 	switch (ch) {
 	case '\0':
@@ -134,11 +134,11 @@ lex(struct txt *in)
 		rv.kind = TOK_IDENT;
 		/* Check for special identifiers */
 		for (i = 0; i < sizeof(kw)/sizeof(*kw); ++i) {
-			if (txt_at(in) - rv.str == (long)strlen(kw[i].str)
-			&& !strncmp(kw[i].str, rv.str, txt_at(in) - rv.str))
+			if (txt_at(in) - rv.bytes == (long)strlen(kw[i].bytes)
+			&& !strncmp(kw[i].bytes, rv.bytes, txt_at(in) - rv.bytes))
 				rv.kind = kw[i].kind;
 		}
 	}
-	rv.len = txt_at(in) - rv.str;
+	rv.len = txt_at(in) - rv.bytes;
 	return rv;
 }

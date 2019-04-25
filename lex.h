@@ -41,12 +41,15 @@ typedef enum {
 	TOK_OCT,
 	TOK_DEC,
 	TOK_HEX,
+
+	/* Directives */
 	TOK_NOP,
 	TOK_HALT,
 	TOK_LA,
 	TOK_LI,
 	TOK_LOAD,
 	TOK_STORE,
+	TOK_JMP,
 	TOK_WORD,
 } token_k;
 
@@ -55,7 +58,7 @@ struct token {
 	size_t col;
 	token_k kind;
 	size_t len;
-	char const *str;
+	char const *bytes;
 };
 
 /* Lex a token from a file */

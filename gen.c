@@ -23,7 +23,7 @@ err(struct txt *in, struct token const *t, char const *msg)
 {
 	size_t i;
 	fprintf(stderr, "--> %s:%zu:%zu\n", in->name, t->row, t->col);
-	char const *line = t->str - t->col + 1;
+	char const *line = t->bytes - t->col + 1;
 
 	for (i = 0; line[i] != '\n' && line[i] != '\0'; ++i)
 		putc(line[i], stderr);
@@ -41,10 +41,8 @@ err(struct txt *in, struct token const *t, char const *msg)
 static void
 gen(uint16_t *out, uint16_t instr)
 {
-	if (pass == 1) {
-		printf("0x%x\n", instr);
+	if (pass == 1)
 		out[idx++] = instr;
-	}
 	pc += 1;
 }
 
@@ -101,7 +99,7 @@ top:
 		exit(-1);
 	}
 
-	tmp = strtol(next.str, NULL, 0);
+	tmp = strtol(next.bytes, NULL, 0);
 	if (tmp > (uint64_t)(1 << maxbit) - 1) {
 		err(in, &next, "integer literal too large");
 		exit(-1);
@@ -182,6 +180,19 @@ asm_word(struct txt *in, uint16_t *out)
 	gen(out, word);
 }
 
+static void
+asm_li(struct txt *in, uint16_t *out)
+{
+	uint16_t rd = 0, im16 = 0;
+
+        parse_reg(in, &rd);
+        parse_comma(in);
+        parse_number(in, 16, &im16);
+
+	gen(out, vm16_ori(VM16_LUI, rd, (im16 & 0xFFC0) >> 6));
+	gen(out, vm16_orri(VM16_ADDI, rd, rd, im16 & 0x3F));
+}
+
 size_t
 assemble(struct txt *in, uint16_t out[VM16_MM_SIZE])
 {
@@ -260,6 +271,9 @@ assemble(struct txt *in, uint16_t out[VM16_MM_SIZE])
 				break;
 			case TOK_WORD:
 				asm_word(in, out);
+				break;
+			case TOK_LI:
+				asm_li(in, out);
 				break;
 			default:
 				err(in, &next, "expected instruction");

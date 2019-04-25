@@ -105,9 +105,12 @@ main(int argc, char **argv)
 
 		vm16_init(v);
 		vm16_load(v, out, nwords);
-		for (int i = 0; i < 32; ++i) {
+
+		printf("==== begin program ====\n");
+		for (int i = 0; i < 32; ++i)
 			printf("%d\n", out[i]);
-		}
+		printf("==== end program ====\n");
+
 		if (dump) {
 			while (v->pc != VM16_ADDR_HALT) {
 				vm16_dump(stdout, v);
