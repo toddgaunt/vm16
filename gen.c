@@ -188,8 +188,29 @@ asm_li(struct txt *in, uint16_t *out)
         parse_comma(in);
         parse_number(in, 16, &im16);
 
-	gen(out, vm16_ori(VM16_LUI, rd, (im16 & 0xFFC0) >> 6));
-	gen(out, vm16_orri(VM16_ADDI, rd, rd, im16 & 0x3F));
+	if (im16 & 0xFFC0) {
+		gen(out, vm16_ori(VM16_LUI, rd, (im16 & 0xFFC0) >> 6));
+		gen(out, vm16_orri(VM16_ADDI, rd, rd, im16 & 0x3F));
+	} else {
+		gen(out, vm16_orri(VM16_ADDI, rd, 0, im16 & 0x3F));
+	}
+}
+
+static void
+asm_la(struct txt *in, uint16_t *out)
+{
+	uint16_t rd = 0, addr = 0;
+
+        parse_reg(in, &rd);
+        parse_comma(in);
+        parse_label(in, &addr);
+
+	if (addr & 0xFFC0) {
+		gen(out, vm16_ori(VM16_LUI, rd, (addr & 0xFFC0) >> 6));
+		gen(out, vm16_orri(VM16_ADDI, rd, rd, addr & 0x3F));
+	} else {
+		gen(out, vm16_orri(VM16_ADDI, rd, 0, addr));
+	}
 }
 
 size_t
@@ -272,6 +293,9 @@ assemble(struct txt *in, uint16_t out[VM16_MM_SIZE])
 				break;
 			case TOK_WORD:
 				asm_word(in, out);
+				break;
+			case TOK_LA:
+				asm_la(in, out);
 				break;
 			case TOK_LI:
 				asm_li(in, out);
