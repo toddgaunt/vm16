@@ -325,9 +325,6 @@ assemble(struct txt *in, uint16_t out[VM16_MM_SIZE])
 			case TOK_HALT:
 				gen(out, vm16_orri(VM16_JALR, 0, 0, 0));
 				break;
-			case TOK_WORD:
-				asm_word(in, out);
-				break;
 			case TOK_LA:
 				asm_la(in, out);
 				break;
@@ -339,6 +336,9 @@ assemble(struct txt *in, uint16_t out[VM16_MM_SIZE])
 				break;
 			case TOK_STORE:
 				asm_store(in, out);
+				break;
+			case TOK_WORD:
+				asm_word(in, out);
 				break;
 			default:
 				err(in, &tok, "expected instruction");
