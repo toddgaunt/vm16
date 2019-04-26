@@ -108,7 +108,7 @@ main(int argc, char **argv)
 
 		printf("==== begin program ====\n");
 		for (int i = 0; i < 32; ++i)
-			printf("%d\n", out[i]);
+			printf("0x%x\n", out[i]);
 		printf("==== end program ====\n");
 
 		if (dump) {
