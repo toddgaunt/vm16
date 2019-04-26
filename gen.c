@@ -15,7 +15,6 @@ int pass = 0;
 uint16_t pc = VM16_ADDR_START;
 size_t idx = 0;
 struct symtab *symtab;
-struct token next;
 
 /* Print out an assembler error message */
 static void
@@ -46,19 +45,15 @@ gen(uint16_t *out, uint16_t instr)
 	pc += 1;
 }
 
-/* Get the next token */
-static void
-get(struct txt *in) {
-	next = lex(in);
-}
-
 /* Parse a comma else error */
 static bool
 parse_comma(struct txt *in)
 {
-	get(in);
-	if (next.kind != TOK_COMMA) {
-		err(in, &next, "expected comma");
+	struct token tok;
+
+	tok = lex(in);
+	if (tok.kind != TOK_COMMA) {
+		err(in, &tok, "expected comma");
 		exit(-1);
 	}
 	return true;
@@ -68,12 +63,14 @@ parse_comma(struct txt *in)
 static bool
 parse_reg(struct txt *in, uint16_t *r)
 {
-	get(in);
-	if (next.kind < TOK_ZERO || next.kind > TOK_T3) {
-		err(in, &next, "expected register");
+	struct token tok;
+
+	tok = lex(in);
+	if (tok.kind < TOK_ZERO || tok.kind > TOK_T3) {
+		err(in, &tok, "expected register");
 		exit(-1);
 	}
-	*r = next.kind - TOK_ZERO;
+	*r = tok.kind - TOK_ZERO;
 	return true;
 }
 
@@ -81,12 +78,13 @@ parse_reg(struct txt *in, uint16_t *r)
 static bool
 parse_number(struct txt *in, uint8_t maxbit, uint16_t *n)
 {
+	struct token tok;
 	uint64_t tmp;
 	bool negate = false;
 
 top:
-	get(in);
-	switch (next.kind) {
+	tok = lex(in);
+	switch (tok.kind) {
 	case TOK_OCT:
 	case TOK_DEC:
 	case TOK_HEX:
@@ -95,13 +93,13 @@ top:
 		negate = !negate;
 		goto top;
 	default:
-		err(in, &next, "expected integer literal");
+		err(in, &tok, "expected integer literal");
 		exit(-1);
 	}
 
-	tmp = strtol(next.bytes, NULL, 0);
+	tmp = strtol(tok.bytes, NULL, 0);
 	if (tmp > (uint64_t)(1 << maxbit) - 1) {
-		err(in, &next, "integer literal too large");
+		err(in, &tok, "integer literal too large");
 		exit(-1);
 	}
 	if (negate)
@@ -113,11 +111,12 @@ top:
 static bool
 parse_label(struct txt *in, uint16_t *addr)
 {
+	struct token tok;
 	uint16_t *tmp;
 
-	get(in);
-	if (next.kind != TOK_IDENT) {
-		err(in, &next, "expected label");
+	tok = lex(in);
+	if (tok.kind != TOK_IDENT) {
+		err(in, &tok, "expected label");
 		exit(-1);
 	}
 
@@ -126,9 +125,9 @@ parse_label(struct txt *in, uint16_t *addr)
 		return true;
 	}
 
-	tmp = symtab_at(symtab, &next);
+	tmp = symtab_at(symtab, &tok);
 	if (!tmp) {
-		err(in, &next, "use of undefined label");
+		err(in, &tok, "use of undefined label");
 		exit(-1);
 	}
 	*addr = *tmp;
@@ -196,27 +195,29 @@ asm_li(struct txt *in, uint16_t *out)
 size_t
 assemble(struct txt *in, uint16_t out[VM16_MM_SIZE])
 {
+	struct token tok;
+
 	symtab = symtab_create(1024);
 	for (pass = 0; pass < 2; ++pass) {
 		pc = VM16_ADDR_START;
-		get(in);
-		while (next.kind != TOK_EOF) {
-			if (next.kind == TOK_IDENT) {
+		tok = lex(in);
+		while (tok.kind != TOK_EOF) {
+			if (tok.kind == TOK_IDENT) {
 				if (pass == 0) {
 					struct token const *prev;
 
-					prev = symtab_getk(symtab, &next);
+					prev = symtab_getk(symtab, &tok);
 					if (prev) {
-						err(in, &next, "duplicate label");
+						err(in, &tok, "duplicate label");
 						err(in, prev, "previously defined here");
 						exit(-1);
 					}
-					*symtab_getv(symtab, &next) = pc;
+					*symtab_getv(symtab, &tok) = pc;
 				}
-				get(in);
+				tok = lex(in);
 			}
 
-			switch (next.kind) {
+			switch (tok.kind) {
 			case TOK_LUI:
 				asm_ori(in, out, VM16_LUI);
 				break;
@@ -276,10 +277,10 @@ assemble(struct txt *in, uint16_t out[VM16_MM_SIZE])
 				asm_li(in, out);
 				break;
 			default:
-				err(in, &next, "expected instruction");
+				err(in, &tok, "expected instruction");
 				break;
 			}
-			get(in);
+			tok = lex(in);
 		}
 		txt_reset(in);
 	}
