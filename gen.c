@@ -79,7 +79,7 @@ static bool
 parse_number(struct txt *in, uint8_t maxbit, uint16_t *n)
 {
 	struct token tok;
-	uint64_t tmp;
+	uint16_t tmp;
 	bool negate = false;
 
 top:
@@ -213,6 +213,40 @@ asm_la(struct txt *in, uint16_t *out)
 	}
 }
 
+static void
+asm_load(struct txt *in, uint16_t *out)
+{
+	uint16_t rd = 0, addr = 0;
+
+        parse_reg(in, &rd);
+        parse_comma(in);
+        parse_label(in, &addr);
+
+	if (addr & 0xFFC0) {
+		gen(out, vm16_ori(VM16_LUI, rd, (addr & 0xFFC0) >> 6));
+		gen(out, vm16_orri(VM16_LW, rd, rd, addr & 0x3F));
+	} else {
+		gen(out, vm16_orri(VM16_LW, rd, 0, addr));
+	}
+}
+
+static void
+asm_store(struct txt *in, uint16_t *out)
+{
+	uint16_t rd = 0, addr = 0;
+
+        parse_reg(in, &rd);
+        parse_comma(in);
+        parse_label(in, &addr);
+
+	if (addr & 0xFFC0) {
+		gen(out, vm16_ori(VM16_LUI, rd, (addr & 0xFFC0) >> 6));
+		gen(out, vm16_orri(VM16_SW, rd, rd, addr & 0x3F));
+	} else {
+		gen(out, vm16_orri(VM16_SW, rd, 0, addr));
+	}
+}
+
 size_t
 assemble(struct txt *in, uint16_t out[VM16_MM_SIZE])
 {
@@ -299,6 +333,12 @@ assemble(struct txt *in, uint16_t out[VM16_MM_SIZE])
 				break;
 			case TOK_LI:
 				asm_li(in, out);
+				break;
+			case TOK_LOAD:
+				asm_load(in, out);
+				break;
+			case TOK_STORE:
+				asm_store(in, out);
 				break;
 			default:
 				err(in, &tok, "expected instruction");
