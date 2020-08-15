@@ -86,44 +86,59 @@ vm16_step(struct vm16 *v)
 	im7 |= im7 & 0x40 ? 0xFF80 : 0x0000;
 	/* Execute */
 	switch(op) {
-	case VM16_LUI:   v->r[rd] = im10 << 6;
-	break;
-	case VM16_AUIPC: v->r[rd] = v->pc + (im10 << 6);
-	break;
-	case VM16_JALR:  if (rd) v->r[rd] = v->pc + 1; v->pc = v->r[r1] + im7;
-	break;
-	case VM16_BEQ:   v->pc += v->r[rd] == v->r[r1] ? im7 : 0;
-	break;
-	case VM16_LW:    v->r[rd] = v->mm[v->r[r1] + im7];
-	break;
-	case VM16_SW:    v->mm[v->r[r1] + im7] = v->r[rd];
-	break;
-	case VM16_ADDI:  v->r[rd] = v->r[r1] + im7;
-	break;
+	case VM16_LUI:
+		v->r[rd] = im10 << 6;
+		break;
+	case VM16_AUIPC:
+		v->r[rd] = v->pc + (im10 << 6);
+		break;
+	case VM16_JALR:
+		if (rd) v->r[rd] = v->pc + 1; v->pc = v->r[r1] + im7;
+		break;
+	case VM16_BEQ:
+		v->pc += v->r[rd] == v->r[r1] ? im7 : 0;
+		break;
+	case VM16_LW:
+		v->r[rd] = v->mm[v->r[r1] + im7];
+		break;
+	case VM16_SW:
+		v->mm[v->r[r1] + im7] = v->r[rd];
+		break;
+	case VM16_ADDI:
+		v->r[rd] = v->r[r1] + im7;
+		break;
 	case VM16_MATH:
 		switch (alt) {
-		case VM16_ADD:  v->r[rd] = v->r[r1] + v->r[r2];
-		break;
-		case VM16_SUB:  v->r[rd] = v->r[r1] - v->r[r2];
-		break;
-		case VM16_SLL:  v->r[rd] = v->r[r1] << v->r[r2];
-		break;
-		case VM16_SRL:  v->r[rd] = v->r[r1] >> v->r[r2];
-		break;
-		case VM16_NAND: v->r[rd] = ~(v->r[r1] & v->r[r2]);
-		break;
-		case VM16_AND:  v->r[rd] = v->r[r1] & v->r[r2];
-		break;
-		case VM16_OR:   v->r[rd] = v->r[r1] | v->r[r2];
-		break;
-		case VM16_LT:   v->r[rd] = v->r[r1] < v->r[r2];
-		break;
+		case VM16_ADD:
+			v->r[rd] = v->r[r1] + v->r[r2];
+			break;
+		case VM16_SUB:
+		v->r[rd] = v->r[r1] - v->r[r2];
+			break;
+		case VM16_SLL:
+			v->r[rd] = v->r[r1] << v->r[r2];
+			break;
+		case VM16_SRL:
+			v->r[rd] = v->r[r1] >> v->r[r2];
+			break;
+		case VM16_NAND:
+			v->r[rd] = ~(v->r[r1] & v->r[r2]);
+			break;
+		case VM16_AND:
+			v->r[rd] = v->r[r1] & v->r[r2];
+			break;
+		case VM16_OR:
+			v->r[rd] = v->r[r1] | v->r[r2];
+			break;
+		case VM16_LT:
+			v->r[rd] = v->r[r1] < v->r[r2];
+			break;
 		}
 	}
 	/* Hardwire register zero to the value 0 */
 	v->r[0] = 0;
 	/* Output anything written to memory-mapped stdout */
-	if (v->mm[VM16_ADDR_OUT]) {
+	if (v->mm[VM16_ADDR_OUT] != 0) {
 		putc(v->mm[VM16_ADDR_OUT], stdout);
 		v->mm[VM16_ADDR_OUT] = 0;
 	}
