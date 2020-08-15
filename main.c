@@ -13,7 +13,7 @@
 
 char const *argv0;
 
-char *usage = "[-h] [-i <inpath>] [-o <outpath>] [file]\n";
+char *usage = "[-h] [-d] [-i <inpath>] [-o <outpath>] [file]\n";
 
 static long
 flen(FILE *fp)
