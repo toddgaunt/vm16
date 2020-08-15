@@ -1,0 +1,23 @@
+START
+    add zero, zero, zero
+    sub zero, zero, zero
+LABEL
+    la t2, LABEL
+    li t1, 45000
+    load t3, FOOBAR
+    nop
+    nop
+    beq zero, zero, -3
+    nop
+    halt
+    //jmp LABEL
+    //jalr zero, t0, 16
+    .word 1024
+    .word 1024
+FOOBAR
+    .word 1024
+    .word 1024
+    .word 1024
+    .word 1024
+    .word 1024
+    .word 1024
