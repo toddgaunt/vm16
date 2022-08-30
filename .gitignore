@@ -13,6 +13,6 @@
 
 # Whitelist specific filenames
 !*.gitignore
-!*README
+!*README.md
 !*LICENSE
 !*Makefile
