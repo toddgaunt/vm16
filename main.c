@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "arg.h"
 #include "gen.h"
@@ -20,11 +21,13 @@ flen(FILE *fp)
 {
 	long size;
 
-	if (0 > fseek(fp, 0, SEEK_END))
+	if (0 > fseek(fp, 0, SEEK_END)) {
 		return -1;
+	}
 	size = ftell(fp);
-	if (0 > size)
+	if (0 > size) {
 		return -1;
+	}
 	rewind(fp);
 
 	return size;
@@ -64,13 +67,15 @@ main(int argc, char **argv)
 		exit(0);
 	case 'i':
 		inpath = ARGP(argv);
-		if (!inpath)
-		    log_fatal("No input file provided for -i\n");
+		if (!inpath) {
+			log_fatal("No input file provided for -i\n");
+		}
 		break;
 	case 'o':
 		outpath = ARGP(argv);
-		if (!outpath)
-		    log_fatal("No output file provided for -o\n");
+		if (!outpath) {
+			log_fatal("No output file provided for -o\n");
+		}
 		break;
 	case 'd':
 		dump = true;
@@ -84,8 +89,9 @@ main(int argc, char **argv)
 
 	runpath = argv[0];
 
-	if (!outpath)
+	if (!outpath) {
 		outpath = "a.out";
+	}
 
 	if (inpath) {
 		FILE *fp;
@@ -95,8 +101,9 @@ main(int argc, char **argv)
 		size_t nwords;
 
 		fp = fopen(inpath, "ro");
-		if (!fp)
+		if (!fp) {
 			log_fatal("Unable to open '%s'\n", inpath);
+		}
 
 		txt_init(&in, inpath, strff(fp));
 		fclose(fp);

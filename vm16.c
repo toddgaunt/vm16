@@ -41,8 +41,9 @@ bool
 vm16_load(struct vm16 *vm, uint16_t *words, uint16_t nwords)
 {
 	/* Don't load the words if they can't fit in main memory */
-	if (0x10 + nwords >= VM16_MM_SIZE)
+	if (0x10 + nwords >= VM16_MM_SIZE) {
 		return false;
+	}
 	memcpy(&vm->mm[VM16_ADDR_START], words, sizeof (*words) * nwords);
 	return true;
 }
@@ -70,8 +71,9 @@ vm16_step(struct vm16 *v)
 {
 	uint16_t op, rd, im10, r1, im7, alt, r2;
 	
-	if (v->pc == VM16_ADDR_HALT)
+	if (v->pc == VM16_ADDR_HALT) {
 		return;
+	}
 	/* Fetch */
 	v->ir = v->mm[v->pc++];
 	/* Decode */
@@ -93,7 +95,10 @@ vm16_step(struct vm16 *v)
 		v->r[rd] = v->pc + (im10 << 6);
 		break;
 	case VM16_JALR:
-		if (rd) v->r[rd] = v->pc + 1; v->pc = v->r[r1] + im7;
+		if (rd) {
+			v->r[rd] = v->pc + 1;
+		}
+		v->pc = v->r[r1] + im7;
 		break;
 	case VM16_BEQ:
 		v->pc += v->r[rd] == v->r[r1] ? im7 : 0;

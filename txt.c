@@ -22,8 +22,9 @@ txt_get(struct txt *t)
 {
 	int ch;
 
-	if ('\0' == t->str[t->seek])
+	if ('\0' == t->str[t->seek]) {
 		return '\0';
+	}
 	ch = t->str[t->seek++];
 	if ('\n' == ch) {
 		t->row += 1;

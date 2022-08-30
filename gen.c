@@ -27,8 +27,9 @@ err(struct txt *in, struct token const *t, char const *msg)
 	for (i = 0; line[i] != '\n' && line[i] != '\0'; ++i)
 		putc(line[i], stderr);
 	putc('\n', stderr);
-	if (!msg)
+	if (!msg) {
 		return;
+	}
 	for (i = 0; i < t->col - 1; ++i)
 		putc(' ', stderr);
 	for (i = 0; i < (t->len ? t->len : 1); ++i)
@@ -40,8 +41,9 @@ err(struct txt *in, struct token const *t, char const *msg)
 static void
 gen(uint16_t *out, uint16_t instr)
 {
-	if (pass == 1)
+	if (pass == 1) {
 		out[idx++] = instr;
+	}
 	pc += 1;
 }
 
@@ -102,8 +104,9 @@ top:
 		err(in, &tok, "integer literal too large");
 		exit(-1);
 	}
-	if (negate)
+	if (negate) {
 		tmp = -tmp;
+	}
 	*n = tmp;
 	return true;
 }

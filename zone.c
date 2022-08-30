@@ -29,8 +29,9 @@ mkchunk(size_t size, struct chunk *next)
 	struct chunk *rv;
 
 	rv = calloc(1, sizeof(*rv) + size);
-	if (!rv)
+	if (!rv) {
 		return NULL;
+	}
 	rv->bytes = (uint8_t *)(rv + 1);
 	rv->sp = size;
 	rv->next = next;
@@ -53,8 +54,9 @@ zone_pop()
 void *
 zone_alloc(size_t n)
 {
-	if (!head)
+	if (!head) {
 		zone_push();
+	}
 	return zone_allocz(head, n);
 }
 
@@ -108,8 +110,9 @@ zone_allocz(zone *z, size_t n)
 		struct chunk *tmp;
 
 		tmp = mkchunk(max(n, CHUNK_SIZE), z->chunk);
-		if (!tmp)
+		if (!tmp) {
 			return NULL;
+		}
 		z->chunk = tmp;
 	}
 

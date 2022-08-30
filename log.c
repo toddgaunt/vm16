@@ -25,14 +25,16 @@ _log(int level, FILE *out, char const *file, int row, char const *fmt, ...)
 
 	if (log_level != LOG_OFF) {
 		/* Logging at debug levels gives more detail for developers */
-		if (log_level < LOG_INFO)
+		if (log_level < LOG_INFO) {
 			fprintf(out, "%-5s %s:%d: ", msg[level], file, row);
+		}
 		va_start(ap, fmt);
 		vfprintf(out, fmt, ap);
 		va_end(ap);
 		fflush(out);
 	}
 	/* Fatal messages indicate the program cannot continue to run */
-	if (LOG_FATAL == level)
+	if (LOG_FATAL == level) {
 		exit(-1);
+	}
 }

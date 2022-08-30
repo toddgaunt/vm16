@@ -34,11 +34,13 @@ find_index(struct symtab const *st, struct token const *k)
 	begin = hash(k->bytes, k->len) % st->size;
 	i = begin;
 	while (st->k[i]) {
-		if (st->k[i]->len == k->len && !memcmp(st->k[i]->bytes, k->bytes, k->len))
+		if (st->k[i]->len == k->len && !memcmp(st->k[i]->bytes, k->bytes, k->len)) {
 			break;
+		}
 		i = (i + 1) % st->size;
-		if (begin == i)
+		if (begin == i) {
 			return st->size;
+		}
 	}
 	return i;
 }
@@ -52,8 +54,9 @@ symtab_create(size_t size)
 	z = zone_pushz(NULL);
 
 	st = zone_allocz(z, sizeof(*st));
-	if (!st)
+	if (!st) {
 		return NULL;
+	}
 	st->z = z;
 	st->k = zone_allocz(z, sizeof(*st->k) * size);
 	st->v = zone_allocz(z, sizeof(*st->v) * size);
@@ -73,8 +76,9 @@ symtab_getk(struct symtab const *st, struct token const *k)
 {
 	size_t i = find_index(st, k);
 
-	if (i >= st->size || !st->k[i])
+	if (i >= st->size || !st->k[i]) {
 		return NULL;
+	}
 	return st->k[i];
 }
 
@@ -83,8 +87,9 @@ symtab_getv(struct symtab *st, struct token const *k)
 {
 	size_t i = find_index(st, k);
 
-	if (i >= st->size)
+	if (i >= st->size) {
 		return NULL;
+	}
 	if (!st->k[i]) {
 		st->k[i] = zone_allocz(st->z, sizeof(*k));
 		if (!st->k[i])
@@ -100,7 +105,8 @@ symtab_at(struct symtab const *st, struct token const *k)
 {
 	size_t i = find_index(st, k);
 
-	if (i >= st->size || !st->k[i])
+	if (i >= st->size || !st->k[i]) {
 		return NULL;
+	}
 	return &st->v[i];
 }

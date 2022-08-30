@@ -34,14 +34,6 @@ options:
 	@echo "LDFLAGS   = $(LDFLAGS)"
 	@echo "CC        = $(CC)"
 
-test: $(TEST)
-
-check: test
-	@for t in $(TEST); do ./$$t -g; done
-
-vcheck: test
-	@for t in $(TEST); do valgrind -q ./$$t -v -g; done
-
 dist: $(DIST)
 	mkdir vm16-$(VERSION)
 	cp -f $(DIST) vm16-$(VERSION)
@@ -64,7 +56,6 @@ uninstall:
 
 clean:
 	rm -f $(OBJ)
-	rm -f $(TEST)
 	rm -f vm16-$(VERSION).tar.gz
 	rm -f vm16
 

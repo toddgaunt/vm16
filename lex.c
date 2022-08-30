@@ -57,8 +57,9 @@ static token_k
 lex_raw_string(struct txt *in)
 {
 	while('`' != txt_at(in)[0]) {
-		if (!txt_at(in)[0])
+		if (!txt_at(in)[0]) {
 			return TOK_ERROR;
+		}
 		txt_get(in);
 	}
 	txt_get(in);
@@ -135,8 +136,9 @@ lex(struct txt *in)
 		/* Check for special identifiers */
 		for (i = 0; i < sizeof(kw)/sizeof(*kw); ++i) {
 			if (txt_at(in) - rv.bytes == (long)strlen(kw[i].bytes)
-			&& !strncmp(kw[i].bytes, rv.bytes, txt_at(in) - rv.bytes))
+			&& !strncmp(kw[i].bytes, rv.bytes, txt_at(in) - rv.bytes)) {
 				rv.kind = kw[i].kind;
+			}
 		}
 	}
 	rv.len = txt_at(in) - rv.bytes;
